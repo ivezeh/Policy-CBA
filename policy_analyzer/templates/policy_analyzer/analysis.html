@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Investment Analysis with Legislative Impact</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Investment Details</h5>
+                    <form method="post" id="analysisForm">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ field.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">Analyze Investment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        {% if show_results %}
+        <div class="col-md-6" id="results">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Analysis Results</h5>
+                    
+                    <div class="mb-4">
+                        <h6>ROI Analysis</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">Base ROI</h6>
+                                        <h4 class="card-title {% if investment_analysis.base_roi_percentage > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ investment_analysis.base_roi_percentage|floatformat:2 }}%
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">Adjusted ROI</h6>
+                                        <h4 class="card-title {% if investment_analysis.adjusted_roi_percentage > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ investment_analysis.adjusted_roi_percentage|floatformat:2 }}%
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if investment_analysis.opportunities %}
+<div class="mb-4">
+    <h6>Legislative Opportunities</h6>
+    <div class="accordion" id="opportunitiesAccordion">
+        {% for opportunity in investment_analysis.opportunities %}
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#opportunity{{ forloop.counter }}">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <span>{{ opportunity.bill_id }}: {{ opportunity.bill_title|truncatechars:50 }}</span>
+                        {% if 'chaptered' in opportunity.status.lower or 'approved' in opportunity.status.lower %}
+                        <span class="badge bg-success ms-2">Enacted</span>
+                        {% elif 'vetoed' in opportunity.status.lower %}
+                        <span class="badge bg-danger ms-2">Vetoed</span>
+                        {% elif 'died' in opportunity.status.lower %}
+                        <span class="badge bg-secondary ms-2">Dead</span>
+                        {% else %}
+                        <span class="badge bg-primary ms-2">Active</span>
+                        {% endif %}
+                    </div>
+                </button>
+            </h2>
+            <div id="opportunity{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#opportunitiesAccordion">
+                <div class="accordion-body">
+                    <p><strong>Status:</strong> {{ opportunity.status }}</p>
+                    <p><strong>Potential Impact:</strong> {{ opportunity.potential_impact }}</p>
+                    <p><strong>Probability:</strong> {{ opportunity.probability }}</p>
+                    <p><strong>Relevance:</strong> {{ opportunity.relevance }}</p>
+                    <p><strong>Subjects:</strong> {{ opportunity.subjects|join:", " }}</p>
+                    <a href="{{ opportunity.url }}" target="_blank" class="btn btn-sm btn-info">View Bill</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if investment_analysis.risk_factors %}
+<div class="mb-4">
+    <h6>Legislative Risk Factors</h6>
+    <div class="accordion" id="risksAccordion">
+        {% for risk in investment_analysis.risk_factors %}
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#risk{{ forloop.counter }}">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <span>{{ risk.bill_id }}: {{ risk.bill_title|truncatechars:50 }}</span>
+                        {% if 'chaptered' in risk.status.lower or 'approved' in risk.status.lower %}
+                        <span class="badge bg-danger ms-2">Enacted</span>
+                        {% elif 'vetoed' in risk.status.lower %}
+                        <span class="badge bg-success ms-2">Vetoed</span>
+                        {% elif 'died' in risk.status.lower %}
+                        <span class="badge bg-secondary ms-2">Dead</span>
+                        {% else %}
+                        <span class="badge bg-warning ms-2">Active</span>
+                        {% endif %}
+                    </div>
+                </button>
+            </h2>
+            <div id="risk{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#risksAccordion">
+                <div class="accordion-body">
+                    <p><strong>Status:</strong> {{ risk.status }}</p>
+                    <p><strong>Potential Impact:</strong> {{ risk.potential_impact }}</p>
+                    <p><strong>Probability:</strong> {{ risk.probability }}</p>
+                    <p><strong>Relevance:</strong> {{ risk.relevance }}</p>
+                    <p><strong>Subjects:</strong> {{ risk.subjects|join:", " }}</p>
+                    <a href="{{ risk.url }}" target="_blank" class="btn btn-sm btn-info">View Bill</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+                    {% if sentiment_analysis %}
+                    <div class="mb-4">
+                        <h6>Market Sentiment Analysis</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p><strong>Sentiment:</strong> {{ sentiment_analysis.sentiment|title }}</p>
+                                <p><strong>Confidence:</strong> {{ sentiment_analysis.confidence|floatformat:2 }}</p>
+                                <p><strong>Implications:</strong> {{ sentiment_analysis.market_implications }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if show_results %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('results').scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}
